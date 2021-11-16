@@ -1,10 +1,9 @@
 import http from 'http'
-import express, { Express } from 'express'
-import routes from './v2/index'
+import express from 'express'
+import routes from './v2/routes.js'
 
-const router: Express = express()
+const router = express()
 
-router.use(express.urlencoded({ extended: false }))
 router.use(express.json())
 
 router.use((req, res, next) => {
@@ -22,8 +21,8 @@ router.use((req, res, next) => {
 
 router.use('/', routes)
 
-router.use((req, res) => {
-  const error = new Error('not found')
+router.use((_req, res) => {
+  const error = new Error('function not found')
   return res.status(404).json({
     message: error.message,
   })
