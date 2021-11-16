@@ -21,6 +21,8 @@ router.use((req, res, next) => {
 
 router.use('/', routes)
 
+router.use(express.static('public'))
+
 router.use((_req, res) => {
   const error = new Error('function not found')
   return res.status(404).json({
