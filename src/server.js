@@ -1,6 +1,6 @@
 import http from 'http'
 import express from 'express'
-import routes from './v2/routes.js'
+import routes from './routes.js'
 
 const router = express()
 
@@ -10,16 +10,16 @@ router.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
   res.header(
     'Access-Control-Allow-Headers',
-    'origin, X-Requested-With,Content-Type,Accept, Authorization'
+    'origin, X-Requested-With, Content-Type, Accept, Authorization'
   )
   if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', 'GET DELETE POST')
+    res.header('Access-Control-Allow-Methods', routes.v1.methods)
     return res.status(200).json({})
   }
   next()
 })
 
-router.use('/', routes)
+router.use('/', routes.v1.router)
 
 router.use(express.static('public'))
 

@@ -17,5 +17,5 @@ router.delete('/:id', (req, res) => {
   res.send(`Delete a ${req.params.id} link`)
 })
 
-const routes = router
-export default routes
+const v1 = { router, methods: 'GET POST DELETE' }
+export default v1
