@@ -1,20 +1,26 @@
 import express from 'express'
+import responseError from '../../utils/errors.js'
 const router = express.Router()
 
 router.get('/', (req, res) => {
-  res.send('Get all data from user with a key')
-})
-
-router.get('/:id', (req, res) => {
-  res.send(`Get data for ID ${req.params.id} with a key`)
+  res.send('Get all data from user with a key:' + req.headers.authorization)
 })
 
 router.post('/', (req, res) => {
-  res.send(`Create a new shortened link`)
+  const { url, nick } = req.body
+  if (!url) return responseError(res, 420)
+  res.json({
+    id: nick ?? 'randomId',
+    shortened: `https://simplifi.ga/${nick ?? 'randomId'}`,
+    target: url,
+  })
 })
 
 router.delete('/:id', (req, res) => {
-  res.send(`Delete a ${req.params.id} link`)
+  res.json({
+    deleted: true,
+    id: req.params.id,
+  })
 })
 
 const v1 = { router, methods: 'GET POST DELETE' }
