@@ -1,10 +1,11 @@
-import { Db, MongoClient } from 'mongodb'
+import { MongoClient } from 'mongodb'
 
 import dotenv from 'dotenv'
 dotenv.config()
 
-let cachedDb = Db
-let cachedClient = MongoClient
+let cachedDb = null
+
+let cachedClient = null
 
 const mongoConnect = process.env.MONGO_URI
 
@@ -19,6 +20,7 @@ export class Connection {
 
       this.db = this.current.db('simplifiga')
 
+      this.collections()
       return this.cache()
     } catch {
       return console.info('> DB: connection error')
@@ -26,9 +28,7 @@ export class Connection {
   }
 
   static async check() {
-    return cachedDb instanceof Db && cachedClient instanceof MongoClient
-      ? this.recycle()
-      : this.open()
+    return cachedDb && cachedClient ? this.recycle() : this.open()
   }
 
   static cache() {
@@ -41,6 +41,12 @@ export class Connection {
     this.current = cachedClient
     this.db = cachedDb
     return this
+  }
+
+  static collections() {
+    this.links = this.current.db('simplifiga').collection('links')
+    this.clients = this.current.db('simplifiga').collection('clients')
+    this.reset = this.current.db('simplifiga').collection('reset')
   }
 }
 
