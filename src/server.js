@@ -40,8 +40,8 @@ router.use(async (_req, res, next) => {
 router.use(async (req, res, next) => {
   // TODO: Ativar verificação de token
   const authorization = req.headers.authorization
-  if (authorization) return responseError(res, 401)
-  if (authorization === 'valid-auth') return responseError(res, 401)
+  if (!authorization) return responseError(res, 401)
+  if (!authorization === 'test-token') return responseError(res, 401)
   next()
 })
 

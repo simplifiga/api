@@ -1,52 +1,52 @@
-import { MongoClient } from 'mongodb'
+import { Db, MongoClient } from 'mongodb'
 
 import dotenv from 'dotenv'
 dotenv.config()
 
-let cachedDb = null
+const enviroment = process.env.NODE_ENV ?? 'unset'
 
-let cachedClient = null
+let mongoClient = new MongoClient(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
 
-const mongoConnect = process.env.MONGO_URI
+let mongoDb = new Db(mongoClient, 'simplifiga')
 
 export class Connection {
   static async open() {
     try {
       console.info('> DB: Opening a connection')
-      this.current = await MongoClient.connect(mongoConnect, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      })
+      this.current = await mongoClient.connect()
 
       this.db = this.current.db('simplifiga')
 
       this.collections()
       return this.cache()
-    } catch {
-      return console.info('> DB: connection error')
+    } catch (err) {
+      return console.info('> DB: connection error', err)
     }
   }
 
   static async check() {
-    return cachedDb && cachedClient ? this.recycle() : this.open()
+    return this.db && this.current ? this.recycle() : this.open()
   }
 
   static cache() {
-    cachedDb = this.db
-    cachedClient = this.current
+    mongoDb = this.db
+    mongoClient = this.current
     return this
   }
 
   static recycle() {
-    this.current = cachedClient
-    this.db = cachedDb
+    this.current = mongoClient
+    this.db = mongoDb
     return this
   }
 
   static collections() {
-    this.links = this.current.db('simplifiga').collection('links')
-    this.clients = this.current.db('simplifiga').collection('clients')
-    this.reset = this.current.db('simplifiga').collection('reset')
+    this.links = this.db.collection(`${enviroment}_links`)
+    this.clients = this.db.collection(`${enviroment}_clients`)
+    this.reset = this.db.collection(`${enviroment}_reset`)
   }
 }
 
