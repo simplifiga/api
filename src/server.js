@@ -4,6 +4,10 @@ import routes from './routes.js'
 import contentTypeOverride from 'express-content-type-override'
 import responseError from '../utils/errors.js'
 
+import dotenv from 'dotenv'
+import { Connection } from '../database/connection.js'
+dotenv.config()
+
 const router = express()
 
 router.use('*', contentTypeOverride({ contentType: 'application/json' }))
@@ -24,10 +28,20 @@ router.use((req, res, next) => {
   next()
 })
 
-router.use((req, res, next) => {
+router.use(async (_req, res, next) => {
+  const conn = await Connection.check()
+  if (conn?.db && conn?.current) {
+    return next()
+  }
+
+  responseError(res, 500)
+})
+
+router.use(async (req, res, next) => {
+  // TODO: Ativar verificação de token
   const authorization = req.headers.authorization
-  if (!authorization) return responseError(res, 401)
-  if (authorization !== 'valid-auth') return responseError(res, 401)
+  if (authorization) return responseError(res, 401)
+  if (authorization === 'valid-auth') return responseError(res, 401)
   next()
 })
 
