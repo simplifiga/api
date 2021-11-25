@@ -3,7 +3,7 @@ import { Db, MongoClient } from 'mongodb'
 import dotenv from 'dotenv'
 dotenv.config()
 
-const enviroment = process.env.NODE_ENV ?? 'unset'
+const enviroment && enviroment + '-'  process.env.NODE_ENV
 
 let mongoClient = new MongoClient(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -44,9 +44,9 @@ export class Connection {
   }
 
   static collections() {
-    this.links = this.db.collection(`${enviroment}_links`)
-    this.clients = this.db.collection(`${enviroment}_clients`)
-    this.reset = this.db.collection(`${enviroment}_reset`)
+    this.links = this.db.collection(`${enviroment && enviroment + '-'}links`)
+    this.clients = this.db.collection(`${enviroment && enviroment + '-'}clients`)
+    this.reset = this.db.collection(`${enviroment && enviroment + '-'}reset`)
   }
 }
 
