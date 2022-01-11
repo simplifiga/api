@@ -40,13 +40,20 @@ router.use(async (_req, res, next) => {
   responseError(res, 500)
 })
 
-// CRYPTO
+router.use(async (req, res, next) => {
+  // TODO: Ativar verificação de token
+  const authorization = req.headers.authorization
+  if (!authorization) return responseError(res, 401)
+  if (!authorization === 'test-token') return responseError(res, 401)
+  next()
+})
 
 router.use('*', (req, _res, next) => {
-  if (!req.headers.cookie) return next()
-  console.info('Using encrypt')
+  if (!req.headers.cookie || !req.body.encrypted) return next()
+
   serverEncoder((server) => {
-    req.body = req.body && server.decrypt(req.body)
+    req.body =
+      req.body.encrypted && JSON.parse(server.decrypt(req.body.encrypted))
     next()
   })
 })
@@ -57,14 +64,6 @@ router.use('/key', (_req, res) => {
 
 router.use('/key64', (_req, res) => {
   res.send(process.env.PUBLIC_KEY)
-})
-
-router.use(async (req, res, next) => {
-  // TODO: Ativar verificação de token
-  const authorization = req.headers.authorization
-  if (!authorization) return responseError(res, 401)
-  if (!authorization === 'test-token') return responseError(res, 401)
-  next()
 })
 
 router.use('/', routes.v1.router)
