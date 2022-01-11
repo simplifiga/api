@@ -6,6 +6,9 @@ import responseError from '../utils/errors.js'
 
 import dotenv from 'dotenv'
 import { Connection } from '../database/connection.js'
+
+import { serverEncoder, tools } from '../utils/encryptor.js'
+
 dotenv.config()
 
 const router = express()
@@ -35,6 +38,25 @@ router.use(async (_req, res, next) => {
   }
 
   responseError(res, 500)
+})
+
+// CRYPTO
+
+router.use('*', (req, _res, next) => {
+  if (!req.headers.cookie) return next()
+  console.info('Using encrypt')
+  serverEncoder((server) => {
+    req.body = req.body && server.decrypt(req.body)
+    next()
+  })
+})
+
+router.use('/key', (_req, res) => {
+  res.send(tools.toUTF(process.env.PUBLIC_KEY))
+})
+
+router.use('/key64', (_req, res) => {
+  res.send(process.env.PUBLIC_KEY)
 })
 
 router.use(async (req, res, next) => {

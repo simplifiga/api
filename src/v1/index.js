@@ -14,28 +14,36 @@ import {
 
 import { ArrayToObj } from '../../utils/converter.js'
 
+import Response from '../../utils/response.js'
+
 const router = express.Router()
 
 router.get('/', async (req, res) => {
+  // Get all data by user
   const origin = req.headers.authorization
   await retrieveAllUrlData({ origin })
-    .then((data) =>
-      res.json(
+    .then((data) => {
+      Response(
+        req,
+        res,
         data.map((d) =>
           filterObjParams(d, 'id, target, references, locations, clicks')
         )
       )
-    )
+    })
     .catch((err) => console.info(err) && responseError(res, 500))
 })
 
 router.get('/:id', async (req, res) => {
+  // Get all data by id
   const origin = req.headers.authorization
   const id = req.params.id
 
   await retrieveUrlData({ id, origin })
     .then((data) =>
-      res.json(
+      Response(
+        req,
+        res,
         filterObjParams(data, 'id, target, references, locations, clicks')
       )
     )
@@ -43,6 +51,7 @@ router.get('/:id', async (req, res) => {
 })
 
 router.get('/filter/:props', async (req, res) => {
+  // Get all data with filter
   const origin = req.headers.authorization
   const props = req.params.props
     .split('&')
@@ -70,7 +79,9 @@ router.get('/filter/:props', async (req, res) => {
 
   await retrieveAllUrlDataWithFilter({ origin, filter: acceptedProps })
     .then((data) => {
-      res.json(
+      Response(
+        req,
+        res,
         data.map((d) => filterObjParams(d, 'id, target, references, clicks'))
       )
     })
@@ -78,6 +89,7 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
+  // Insert new bridge
   const origin = req.headers.authorization
   const { url, id } = req.body
 
@@ -85,21 +97,29 @@ router.post('/', async (req, res) => {
 
   await createUrlBridge({ id, url, origin })
     .then(() =>
-      res.json({ id, target: url, shortcut: `https://simplifi.ga/${id}` })
+      Response(req, res, {
+        id,
+        target: url,
+        shortcut: `https://simplifi.ga/${id}`,
+      })
     )
     .catch(() => responseError(res, 500))
 })
 
 router.delete('/:id', async (req, res) => {
+  // Delete by id
   const origin = req.headers.authorization
   const id = req.params.id
 
   await deleteUrlBridge({ id, origin })
-    .then(({ deletedCount }) => res.json({ id, deleted: !!deletedCount }))
+    .then(({ deletedCount }) =>
+      Response(req, res, { id, deleted: !!deletedCount })
+    )
     .catch(() => responseError(res, 500))
 })
 
 router.patch('/:id', async (req, res) => {
+  //  Update bridge by id
   const origin = req.headers.authorization
   const id = req.params.id
   const props = req.body.props
@@ -132,7 +152,7 @@ router.patch('/:id', async (req, res) => {
         dataResponse[r] === null && delete dataResponse[r]
       })
 
-      res.json(dataResponse)
+      Response(req, res, dataResponse)
     })
     .catch((err) => console.info(err) && responseError(res, 500))
 })
