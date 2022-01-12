@@ -24,6 +24,12 @@ export function retrieveUrlData({ id, origin }) {
   })
 }
 
+export function searchElementById({ id }) {
+  return new Promise((resolve, reject) => {
+    Connection.links.findOne({ id }).then(resolve, reject)
+  })
+}
+
 export function retrieveAllUrlData({ origin }) {
   return new Promise((resolve, reject) => {
     Connection.links.find({ origin }).toArray().then(resolve, reject)

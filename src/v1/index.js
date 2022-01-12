@@ -15,6 +15,13 @@ import {
 import { ArrayToObj } from '../../utils/converter.js'
 
 import Response from '../../utils/response.js'
+import { generateId } from '../../utils/globals.js'
+
+// CONFIG //
+const config = {
+  idLength: 5,
+}
+// CONFIG //
 
 const router = express.Router()
 
@@ -93,17 +100,22 @@ router.post('/', async (req, res) => {
   const origin = req.headers.authorization
   const { url, id } = req.body
 
+  console.info('ID', id)
   if (!url) return responseError(res, 420)
 
-  await createUrlBridge({ id, url, origin })
-    .then(() =>
-      Response(req, res, {
-        id,
-        target: url,
-        shortcut: `https://simplifi.ga/${id}`,
-      })
-    )
-    .catch(() => responseError(res, 500))
+  generateId({ length: config.idLength, current: id }).then(
+    ({ validId }) =>
+      createUrlBridge({ id: validId, url, origin })
+        .then(() =>
+          Response(req, res, {
+            id: validId,
+            target: url,
+            shortcut: `https://simplifi.ga/${id}`,
+          })
+        )
+        .catch(() => responseError(res, 500)),
+    (_idGenError) => responseError(res, 500)
+  )
 })
 
 router.delete('/:id', async (req, res) => {
