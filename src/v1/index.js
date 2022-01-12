@@ -110,7 +110,7 @@ router.post('/', async (req, res) => {
           Response(req, res, {
             id: validId,
             target: url,
-            shortcut: `https://simplifi.ga/${id}`,
+            shortcut: `https://simplifi.ga/${validId}`,
           })
         )
         .catch(() => responseError(res, 500)),
