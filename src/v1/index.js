@@ -100,7 +100,6 @@ router.post('/', async (req, res) => {
   const origin = req.headers.authorization
   const { url, id } = req.body
 
-  console.info('ID', id)
   if (!url) return responseError(res, 420)
 
   generateId({ length: config.idLength, current: id }).then(
