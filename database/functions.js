@@ -57,3 +57,9 @@ export function deleteUrlBridge({ id, origin }) {
     Connection.links.deleteOne({ id, origin }).then(resolve, reject)
   })
 }
+
+export function validateToken({ token }) {
+  return new Promise((resolve, reject) => {
+    Connection.clients.findOne({ token }).then(resolve, reject)
+  })
+}
