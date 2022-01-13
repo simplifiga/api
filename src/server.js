@@ -13,6 +13,9 @@ dotenv.config()
 
 const router = express()
 
+router.use('*', override.router)
+router.use('*', crypto.router)
+
 router.use(async (_req, res, next) => {
   const conn = await Connection.check()
   if (conn?.db && conn?.current) {
@@ -23,8 +26,10 @@ router.use(async (_req, res, next) => {
 })
 
 router.use(async (req, res, next) => {
-  // TODO: Validation USER
   const authorization = req.headers.authorization
+
+  console.log('NEW REQUEST: ' + authorization)
+
   if (!authorization) return responseError(res, 401)
   validateToken({ token: authorization }).then(
     (data) => {
@@ -34,9 +39,6 @@ router.use(async (req, res, next) => {
     () => responseError(res, 500)
   )
 })
-
-router.use('*', override.router)
-router.use('*', crypto.router)
 
 router.use('/', routes.v1.router)
 

@@ -168,5 +168,5 @@ router.patch('/:id', async (req, res) => {
     .catch((err) => console.info(err) && responseError(res, 500))
 })
 
-const v1 = { router, methods: 'GET POST DELETE' }
+const v1 = { router, methods: 'GET,POST,DELETE' }
 export default v1
