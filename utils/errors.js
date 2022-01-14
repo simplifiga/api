@@ -7,9 +7,9 @@ const loadErrors = async () => {
 }
 loadErrors()
 
-export default function responseError(res, errorCode) {
-  return res.status(errorCode).json({
-    errorCode,
-    message: errors[errorCode] ?? 'Unknown Error',
+export default function responseError(res, statusCode) {
+  return res.status(statusCode).json({
+    statusCode,
+    message: errors[statusCode] ?? 'Unknown Error',
   })
 }
