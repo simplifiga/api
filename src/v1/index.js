@@ -47,14 +47,15 @@ router.get('/:id', async (req, res) => {
   const id = req.params.id
 
   await retrieveUrlData({ id, origin })
-    .then((data) =>
+    .then((data) => {
+      if (!data) return responseError(res, 510)
       Response(
         req,
         res,
         filterObjParams(data, 'id, target, references, locations, clicks')
       )
-    )
-    .catch(() => responseError(res, 500))
+    })
+    .catch((_error) => responseError(res, 500))
 })
 
 router.get('/filter/:props', async (req, res) => {
@@ -86,13 +87,14 @@ router.get('/filter/:props', async (req, res) => {
 
   await retrieveAllUrlDataWithFilter({ origin, filter: acceptedProps })
     .then((data) => {
+      if (!data) return responseError(res, 510)
       Response(
         req,
         res,
         data.map((d) => filterObjParams(d, 'id, target, references, clicks'))
       )
     })
-    .catch(() => responseError(523))
+    .catch(() => responseError(500))
 })
 
 router.post('/', async (req, res) => {
@@ -100,7 +102,7 @@ router.post('/', async (req, res) => {
   const origin = req.headers.authorization
   const { url, id } = req.body
 
-  if (!url) return responseError(res, 420)
+  if (!url) return responseError(res, 400)
 
   generateId({ length: config.idLength, current: id }).then(
     ({ validId }) =>
@@ -113,7 +115,7 @@ router.post('/', async (req, res) => {
           })
         )
         .catch(() => responseError(res, 500)),
-    (_idGenError) => responseError(res, 500)
+    (_idGenError) => responseError(res, 409)
   )
 })
 
@@ -135,15 +137,14 @@ router.patch('/:id', async (req, res) => {
   const id = req.params.id
   const props = req.body.props
 
-  if (!props || props.length === 0) return responseError(res, 401)
+  if (!props || props.length === 0) return responseError(res, 400)
 
   const validProps = filterArrByLength(
     props.filter((params) => ['id', 'target'].includes(params[0])),
     2
   )
 
-  console.info(validProps)
-  if (validProps.length === 0) return responseError(res, 402)
+  if (validProps.length === 0) return responseError(res, 403)
 
   await updateUrlBridge({ origin, id, props: validProps })
     .then(({ acknowledged, matchedCount }) => {

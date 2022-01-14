@@ -1,4 +1,8 @@
 {
-  "401": "Unauthorized access",
-  "501": "Server Error"
+  "401": "Unauthorized: Invalid/non-existent authentication",
+  "501": "Server Error: Internal error during processing",
+  "404": "Not Found: Unknown address",
+  "400": "Bad Request: Incorrect parameters",
+  "510": "Gone: The requested document is not available",
+  "409": "Conflict: Another document has the same identifier"
 }

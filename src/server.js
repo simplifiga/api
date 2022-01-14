@@ -28,12 +28,11 @@ router.use(async (_req, res, next) => {
 router.use(async (req, res, next) => {
   const authorization = req.headers.authorization
 
-  console.log('NEW REQUEST: ' + authorization)
-
   if (!authorization) return responseError(res, 401)
   validateToken({ token: authorization }).then(
     (data) => {
       if (data === null) return responseError(res, 401)
+      console.log('NEW REQUEST: ' + authorization)
       next()
     },
     () => responseError(res, 500)
