@@ -4,5 +4,6 @@
   "404": "Not Found: Unknown address",
   "400": "Bad Request: Incorrect parameters",
   "510": "Gone: The requested document is not available",
+  "406": "Not Acceptable: Some parameter is locked for use to avoid errors",
   "409": "Conflict: Another document has the same identifier"
 }

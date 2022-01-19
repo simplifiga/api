@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
   if (!url) return responseError(res, 400)
 
   generateId({ length: config.idLength, current: id }).then(
-    ({ validId }) =>
+    ({ validId }) => {
       createUrlBridge({ id: validId, url, origin })
         .then(() =>
           Response(req, res, {
@@ -114,8 +114,17 @@ router.post('/', async (req, res) => {
             shortcut: `https://simplifi.ga/${validId}`,
           })
         )
-        .catch(() => responseError(res, 500)),
-    (_idGenError) => responseError(res, 409)
+        .catch(() => responseError(res, 500))
+    },
+    (error) => {
+      switch (error.message) {
+        case 'blocked':
+          responseError(res, 406)
+          break
+        case 'invalid':
+          responseError(res, 409)
+      }
+    }
   )
 })
 
