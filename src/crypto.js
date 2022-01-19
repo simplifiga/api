@@ -4,7 +4,7 @@ import { serverEncoder, tools } from '../utils/encryptor.js'
 const router = express.Router()
 
 router.use('*', (req, _res, next) => {
-  if (!req.headers.cookie || !req.body.encrypted) return next()
+  if (!req.body.encrypted) return next()
   serverEncoder((server) => {
     req.body =
       req.body.encrypted && JSON.parse(server.decrypt(req.body.encrypted))

@@ -2,7 +2,7 @@ import { serverEncoder } from './encryptor.js'
 import responseError from './errors.js'
 
 export default function Response(req, res, obj) {
-  const clientKey = req.headers.cookie
+  const clientKey = req.headers['x-api-key']
   if (!clientKey) return res.json(obj)
 
   serverEncoder((server) => {
