@@ -14,7 +14,7 @@ dotenv.config()
 const router = express()
 
 router.use('*', override.router)
-router.use('*', crypto.router)
+router.use('/', crypto.router)
 
 router.use(async (_req, res, next) => {
   const conn = await Connection.check()
