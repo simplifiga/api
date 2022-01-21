@@ -1,6 +1,6 @@
 {
   "name": "simplifiga-api",
-  "version": "1.0.0",
+  "version": "1.0",
   "private": true,
   "description": "API for shortening and managing long links",
   "main": "server.js",
