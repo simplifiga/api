@@ -14,7 +14,6 @@ A Simplifiga é uma plataforma de gerenciamento com foco na simplicidade e efici
 
 - Token de autorização. [Registre-se aqui](https://simplifi.ga/register);
 - Endpoint: [https://simplifiga-api.herokuapp.com/](https://simplifiga-api.herokuapp.com/)
-- Documentação: [https://simplifi.ga/developer](https://simplifi.ga/developer)
 
 ```js
 >>>>> Request
@@ -41,3 +40,5 @@ fetch('https://simplifiga-api.herokuapp.com/', {
 }
 
 ```
+
+<p align="center">© 2022 Simplifi.ga - Ferramenta para encurtar e simplificar links longos.</p>
