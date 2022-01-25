@@ -10,12 +10,15 @@ import {
   retrieveAllUrlData,
   retrieveUrlData,
   updateUrlBridge,
+  updateUsageCounter,
 } from '../../database/functions.js'
 
 import { ArrayToObj } from '../../utils/converter.js'
 
 import Response from '../../utils/response.js'
 import { generateId } from '../../utils/globals.js'
+
+import requestIp from 'request-ip'
 
 // CONFIG //
 const config = {
@@ -98,8 +101,8 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  // Insert new bridge
   const origin = req.headers.authorization
+  const ip = requestIp.getClientIp(req)
   const { url, id } = req.body
 
   if (!url) return responseError(res, 400)
@@ -107,13 +110,14 @@ router.post('/', async (req, res) => {
   generateId({ length: config.idLength, current: id }).then(
     ({ validId }) => {
       createUrlBridge({ id: validId, url, origin })
-        .then(() =>
+        .then(() => {
           Response(req, res, {
             id: validId,
             target: url,
             shortcut: `https://simplifi.ga/${validId}`,
           })
-        )
+          updateUsageCounter({ ip, origin })
+        })
         .catch(() => responseError(res, 500))
     },
     (error) => {

@@ -48,7 +48,7 @@ export class Connection {
     this.clients = this.db.collection(
       `${enviroment && enviroment + '-'}clients`
     )
-    this.reset = this.db.collection(`${enviroment && enviroment + '-'}reset`)
+    this.usage = this.db.collection(`${enviroment && enviroment + '-'}usage`)
   }
 }
 

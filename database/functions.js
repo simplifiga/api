@@ -69,3 +69,59 @@ export function validateToken({ token }) {
     Connection.clients.findOne({ token }).then(resolve, reject)
   })
 }
+
+export function updateUsageCounter({ origin, ip }) {
+  const localhostIp = ['127.0.0.1', '::1', '127.0.0.1', '::ffff:127.0.0.1']
+  const tag = origin === process.env.MAIN_APP_TOKEN ? ip : origin
+  if (!tag || localhostIp.includes(tag)) return
+
+  return new Promise((resolve, reject) => {
+    Connection.usage
+      .updateOne({ tag }, { $inc: { requests: 1 } })
+      .then(async (data) => {
+        if (data.modifiedCount !== 1) {
+          return createUsageCounter({
+            tag,
+            upgraded: await getUpgradedStatus({ origin }),
+          }).then(resolve, reject)
+        }
+        resolve(data)
+      }, reject)
+  })
+}
+
+export function getUsageMetrics({ origin, ip }) {
+  const localhostIp = ['127.0.0.1', '::1', '127.0.0.1', '::ffff:127.0.0.1']
+  const tag = origin === process.env.MAIN_APP_TOKEN ? ip : origin
+  if (!tag || localhostIp.includes(tag)) return
+
+  return new Promise((resolve, reject) => {
+    Connection.usage.findOne({ tag }).then(resolve, reject)
+  })
+}
+
+export function createUsageCounter({ tag, upgraded }) {
+  return new Promise((resolve, reject) => {
+    const expireAt = new Date()
+    expireAt.setDate(expireAt.getDate() + 30)
+    Connection.usage.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 })
+    Connection.usage
+      .insertOne({
+        expireAt,
+        logEvent: 1,
+        logMessage: 'Success!',
+        requests: 1,
+        upgraded: upgraded ?? false,
+        tag,
+      })
+      .then(resolve, reject)
+  })
+}
+
+function getUpgradedStatus({ origin }) {
+  return new Promise((resolve, reject) => {
+    Connection.clients.findOne({ token: origin }).then((user) => {
+      resolve(user.upgraded)
+    }, reject)
+  })
+}

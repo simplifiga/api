@@ -7,7 +7,8 @@ import dotenv from 'dotenv'
 import { Connection } from '../database/connection.js'
 import crypto from './crypto.js'
 import override from './override.js'
-import { validateToken } from '../database/functions.js'
+import { getUsageMetrics, validateToken } from '../database/functions.js'
+import requestIp from 'request-ip'
 
 dotenv.config()
 
@@ -25,7 +26,7 @@ router.use(async (_req, res, next) => {
   responseError(res, 500)
 })
 
-router.use(async (req, res, next) => {
+router.use((req, res, next) => {
   const authorization = req.headers.authorization
 
   if (!authorization) return responseError(res, 401)
@@ -37,6 +38,17 @@ router.use(async (req, res, next) => {
     },
     () => responseError(res, 500)
   )
+})
+
+router.post('/', (req, res, next) => {
+  const origin = req.headers.authorization
+  const ip = requestIp.getClientIp(req)
+
+  getUsageMetrics({ origin, ip })?.then((data) =>
+    data && data.requests >= 100 && !data.upgraded
+      ? responseError(res, 429)
+      : next()
+  ) ?? next()
 })
 
 router.use('/', routes.v1.router)
