@@ -14,7 +14,7 @@ import {
   getUpgradedStatus,
 } from '../../database/functions.js'
 
-import { ArrayToObj } from '../../utils/converter.js'
+import { ArrayToObj, convertUrlToQRcode } from '../../utils/converter.js'
 
 import Response from '../../utils/response.js'
 import { generateId } from '../../utils/globals.js'
@@ -43,6 +43,27 @@ router.get('/', async (req, res) => {
       )
     })
     .catch((err) => console.info(err) && responseError(res, 500))
+})
+
+router.get('/qrcode/:id', async (req, res) => {
+  const origin = req.headers.authorization
+  const id = req.params.id
+
+  await retrieveUrlData({ id, origin })
+    .then((data) => {
+      if (!data) return responseError(res, 510)
+      convertUrlToQRcode({ url: data.target }).then(
+        (qrStream) => {
+          if (!qrStream) return responseError(res, 500)
+          res.setHeader('content-type', 'image/png')
+          qrStream.pipe(res)
+        },
+        () => {
+          responseError(res, 500)
+        }
+      )
+    })
+    .catch((_error) => responseError(res, 500))
 })
 
 router.get('/:id', async (req, res) => {

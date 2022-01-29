@@ -30,6 +30,7 @@
     "mongodb": "^4.1.4",
     "node-rsa": "^1.1.1",
     "nodemon": "^2.0.15",
+    "qrcode": "^1.5.0",
     "request-ip": "^2.1.3"
   }
 }
