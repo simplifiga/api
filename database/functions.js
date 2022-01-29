@@ -1,3 +1,4 @@
+/* eslint-disable prefer-promise-reject-errors */
 import { ArrayToObj } from '../utils/converter.js'
 import { Connection } from './connection.js'
 
@@ -82,7 +83,6 @@ export function updateUsageCounter({ origin, ip }) {
         if (data.modifiedCount !== 1) {
           return createUsageCounter({
             tag,
-            upgraded: await getUpgradedStatus({ origin }),
           }).then(resolve, reject)
         }
         resolve(data)
@@ -96,11 +96,14 @@ export function getUsageMetrics({ origin, ip }) {
   if (!tag || localhostIp.includes(tag)) return
 
   return new Promise((resolve, reject) => {
-    Connection.usage.findOne({ tag }).then(resolve, reject)
+    Connection.usage.findOne({ tag }).then((data) => {
+      if (!data) return reject('metrics-not-found')
+      resolve(data)
+    }, reject)
   })
 }
 
-export function createUsageCounter({ tag, upgraded }) {
+export function createUsageCounter({ tag }) {
   return new Promise((resolve, reject) => {
     const expireAt = new Date()
     expireAt.setDate(expireAt.getDate() + 30)
@@ -111,17 +114,22 @@ export function createUsageCounter({ tag, upgraded }) {
         logEvent: 1,
         logMessage: 'Success!',
         requests: 1,
-        upgraded: upgraded ?? false,
         tag,
       })
       .then(resolve, reject)
   })
 }
 
-function getUpgradedStatus({ origin }) {
+export function getUpgradedStatus({ origin }) {
   return new Promise((resolve, reject) => {
     Connection.clients.findOne({ token: origin }).then((user) => {
-      resolve(user.upgraded)
+      if (!user?.orderRef) return reject('order-not-found')
+      Connection.payments
+        .findOne({ captureId: user.orderRef })
+        .then((payment) => {
+          if (!payment?.status) return reject('payment-status-not-found')
+          resolve(payment.status)
+        })
     }, reject)
   })
 }

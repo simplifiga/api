@@ -9,6 +9,7 @@ router.use(express.json({ type: 'application/json' }))
 router.use(express.urlencoded({ extended: true }))
 
 router.use((req, res, next) => {
+  res.locals.upgraded = null
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Credentials', 'true')

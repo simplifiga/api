@@ -7,7 +7,11 @@ import dotenv from 'dotenv'
 import { Connection } from '../database/connection.js'
 import crypto from './crypto.js'
 import override from './override.js'
-import { getUsageMetrics, validateToken } from '../database/functions.js'
+import {
+  getUpgradedStatus,
+  getUsageMetrics,
+  validateToken,
+} from '../database/functions.js'
 import requestIp from 'request-ip'
 
 dotenv.config()
@@ -17,6 +21,7 @@ const router = express()
 router.use('*', override.router)
 router.use('/', crypto.router)
 
+// Connect database
 router.use(async (_req, res, next) => {
   const conn = await Connection.check()
   if (conn?.db && conn?.current) {
@@ -26,6 +31,7 @@ router.use(async (_req, res, next) => {
   responseError(res, 500)
 })
 
+// Authorization token validation
 router.use((req, res, next) => {
   const authorization = req.headers.authorization
 
@@ -40,22 +46,32 @@ router.use((req, res, next) => {
   )
 })
 
+// metrics < 100 or premium user
 router.post('/', (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
-  getUsageMetrics({ origin, ip })?.then((data) =>
-    data && data.requests >= 100 && !data.upgraded
-      ? responseError(res, 429)
+  getUsageMetrics({ origin, ip })?.then((data) => {
+    data.requests >= 100
+      ? getUpgradedStatus({ origin }).then(
+          (status) => {
+            if (status !== 'COMPLETED') return responseError(res, 403)
+            res.locals.upgraded = status
+            next()
+          },
+          () => {
+            responseError(res, 402)
+          }
+        )
       : next()
-  ) ?? next()
+  }) ?? next()
 })
-
-router.use('/', routes.v1.router)
 
 Object.keys(routes).forEach((version) => {
   router.use(`/${version}`, routes[version].router)
 })
+
+router.use('/', routes.v1.router)
 
 router.use((_req, res) => {
   return responseError(res, 404)

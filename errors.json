@@ -6,5 +6,7 @@
   "510": "Gone: The requested document is not available",
   "406": "Not Acceptable: Some parameter is locked for use to avoid errors",
   "409": "Conflict: Another document has the same identifier",
-  "429": "Too Many Requests: Free license limit reached"
+  "429": "Too Many Requests: Limit reached for free accounts",
+  "402": "Payment Required: This option is not available on the free plan",
+  "403": "Forbidden: Account upgrade is not/not yet valid"
 }

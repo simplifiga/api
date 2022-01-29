@@ -11,6 +11,7 @@ import {
   retrieveUrlData,
   updateUrlBridge,
   updateUsageCounter,
+  getUpgradedStatus,
 } from '../../database/functions.js'
 
 import { ArrayToObj } from '../../utils/converter.js'
@@ -101,33 +102,62 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
+  let upgraded = res.locals.upgraded
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
-  const { url, id } = req.body
 
-  if (!url) return responseError(res, 400)
+  const documents = req.body.length ? req.body : [req.body]
 
-  generateId({ length: config.idLength, current: id }).then(
-    ({ validId }) => {
-      createUrlBridge({ id: validId, url, origin })
-        .then(() => {
-          Response(req, res, {
-            id: validId,
-            target: url,
-            shortcut: `https://simplifi.ga/${validId}`,
-          })
-          updateUsageCounter({ ip, origin })
-        })
-        .catch(() => responseError(res, 500))
+  // Check upgrade to premium function
+  if (documents.length > 1) {
+    if (!upgraded)
+      await getUpgradedStatus({ origin }).then(
+        (status) => {
+          upgraded = status
+        },
+        () => {
+          return responseError(res, 402)
+        }
+      )
+    if (upgraded !== 'COMPLETED') return responseError(res, 403)
+  }
+
+  Promise.all(
+    documents.map(({ url, id }) => {
+      return new Promise((resolve) => {
+        if (!url) return resolve(responseError(null, 400))
+
+        generateId({ length: config.idLength, current: id }).then(
+          async ({ validId }) => {
+            createUrlBridge({ id: validId, url, origin })
+              .then(async () => {
+                await updateUsageCounter({ ip, origin })
+                resolve({
+                  id: validId,
+                  target: url,
+                  shortcut: `https://simplifi.ga/${validId}`,
+                })
+              })
+              .catch(() => resolve(responseError(null, 500)))
+          },
+          (error) => {
+            switch (error.message) {
+              case 'blocked':
+                resolve(responseError(null, 406))
+                break
+              case 'invalid':
+                resolve(responseError(null, 409))
+            }
+          }
+        )
+      })
+    })
+  ).then(
+    (payload) => {
+      Response(req, res, payload.length === 1 ? payload[0] : payload)
     },
-    (error) => {
-      switch (error.message) {
-        case 'blocked':
-          responseError(res, 406)
-          break
-        case 'invalid':
-          responseError(res, 409)
-      }
+    () => {
+      responseError(res, 501)
     }
   )
 })

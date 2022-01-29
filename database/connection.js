@@ -49,6 +49,9 @@ export class Connection {
       `${enviroment && enviroment + '-'}clients`
     )
     this.usage = this.db.collection(`${enviroment && enviroment + '-'}usage`)
+    this.payments = this.db.collection(
+      `${enviroment && enviroment + '-'}payments`
+    )
   }
 }
 
