@@ -141,6 +141,7 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
+  console.info('Init post...')
   let upgraded = res.locals.upgraded
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
@@ -163,21 +164,25 @@ router.post('/', async (req, res) => {
 
   await Promise.all(
     documents.map(({ url, id }) => {
+      console.info('processing a document...')
       return new Promise((resolve) => {
         if (!url) return resolve(responseError(null, 400))
 
         generateId({ length: config.idLength, current: id }).then(
           async ({ validId }) => {
-            createUrlBridge({ id: validId, url, origin })
-              .then(async () => {
+            createUrlBridge({ id: validId, url, origin }).then(
+              async () => {
                 await updateUsageCounter({ ip, origin })
                 resolve({
                   id: validId,
                   target: url,
                   shortcut: `https://simplifi.ga/${validId}`,
                 })
-              })
-              .catch(() => resolve(responseError(null, 500)))
+              },
+              () => {
+                resolve(responseError(null, 500))
+              }
+            )
           },
           (error) => {
             switch (error.message) {
@@ -193,12 +198,17 @@ router.post('/', async (req, res) => {
     })
   ).then(
     (payload) => {
+      console.info('Return payload')
       Response(req, res, payload.length === 1 ? payload[0] : payload)
     },
     () => {
+      console.info('Return error')
       responseError(res, 501)
     }
   )
+
+  console.info('End post...')
+  return res.end()
 })
 
 router.delete('/:id', async (req, res) => {
