@@ -48,6 +48,7 @@ router.use((req, res, next) => {
 
 // metrics < 100 or premium user
 router.post('/', (req, res, next) => {
+  res.locals.upgraded = null
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
