@@ -162,9 +162,8 @@ router.post('/', async (req, res) => {
     if (upgraded !== 'COMPLETED') return responseError(res, 403)
   }
 
-  await Promise.all(
+  return await Promise.all(
     documents.map(({ url, id }) => {
-      console.info('processing a document...')
       return new Promise((resolve) => {
         if (!url) return resolve(responseError(null, 400))
 
@@ -180,7 +179,7 @@ router.post('/', async (req, res) => {
                 })
               },
               () => {
-                resolve(responseError(null, 500))
+                resolve(responseError(null, 501))
               }
             )
           },
@@ -206,9 +205,6 @@ router.post('/', async (req, res) => {
       responseError(res, 501)
     }
   )
-
-  console.info('End post...')
-  return res.end()
 })
 
 router.delete('/:id', async (req, res) => {
