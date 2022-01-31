@@ -27,12 +27,7 @@ const config = {
 }
 // CONFIG //
 
-const router = express.Router()
-
-router.use((req, _res, next) => {
-  console.info('V1: New Request:', req.headers.authorization)
-  next()
-})
+const router = express()
 
 router.get('/', async (req, res) => {
   // Get all data by user
@@ -162,7 +157,7 @@ router.post('/', async (req, res) => {
     if (upgraded !== 'COMPLETED') return responseError(res, 403)
   }
 
-  return await Promise.all(
+  const payload = await Promise.all(
     documents.map(({ url, id }) => {
       return new Promise((resolve) => {
         if (!url) return resolve(responseError(null, 400))
@@ -195,16 +190,13 @@ router.post('/', async (req, res) => {
         )
       })
     })
-  ).then(
-    (payload) => {
-      console.info('Return payload')
-      Response(req, res, payload.length === 1 ? payload[0] : payload)
-    },
-    () => {
-      console.info('Return error')
-      responseError(res, 501)
-    }
   )
+
+  console.info('End post...')
+
+  if (payload && payload.length !== 0)
+    return Response(req, res, payload.length === 1 ? payload[0] : payload)
+  return responseError(res, 501)
 })
 
 router.delete('/:id', async (req, res) => {
