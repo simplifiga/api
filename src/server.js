@@ -47,7 +47,7 @@ router.use((req, res, next) => {
 })
 
 // metrics < 100 or premium user
-router.post('/', async (req, res, next) => {
+router.post(async (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 

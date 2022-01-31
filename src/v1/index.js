@@ -29,7 +29,7 @@ const config = {
 
 const router = express.Router()
 
-router.get('/', async (req, res) => {
+router.get(async (req, res) => {
   // Get all data by user
   const origin = req.headers.authorization
   await retrieveAllUrlData({ origin })
@@ -135,7 +135,7 @@ router.get('/filter/:props', async (req, res) => {
     .catch(() => responseError(500))
 })
 
-router.post('/', async (req, res) => {
+router.post(async (req, res) => {
   let upgraded = res.locals.upgraded
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
@@ -156,7 +156,7 @@ router.post('/', async (req, res) => {
     if (upgraded !== 'COMPLETED') return responseError(res, 403)
   }
 
-  Promise.all(
+  await Promise.all(
     documents.map(({ url, id }) => {
       return new Promise((resolve) => {
         if (!url) return resolve(responseError(null, 400))
