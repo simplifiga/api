@@ -47,11 +47,11 @@ router.use((req, res, next) => {
 })
 
 // metrics < 100 or premium user
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
-  getUsageMetrics({ origin, ip })?.then((data) => {
+  await getUsageMetrics({ origin, ip })?.then((data) => {
     data.requests >= 100
       ? getUpgradedStatus({ origin }).then(
           (status) => {
@@ -64,7 +64,9 @@ router.post('/', (req, res, next) => {
           }
         )
       : next()
-  }) ?? next()
+  })
+
+  next()
 })
 
 Object.keys(routes).forEach((version) => {

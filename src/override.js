@@ -2,13 +2,13 @@ import express from 'express'
 import expressContentTypeOverride from 'express-content-type-override'
 import routes from './routes.js'
 
-const router = express.Router()
+const router = express()
 
 router.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Credentials', 'true')
-  res.setHeader('Access-Control-Allow-Methods', `${routes.v1.methods},OPTIONS`)
+  res.setHeader('Access-Control-Allow-Methods', '*')
   res.setHeader(
     'Access-Control-Allow-Headers',
     'x-api-key, Authorization, Access-Control-Allow-Headers, Access-Control-Allow-Origin, Access-Control-Allow-Credentials, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
