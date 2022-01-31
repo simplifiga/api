@@ -136,72 +136,76 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  console.info('Init post...')
-  let upgraded = res.locals.upgraded
-  const origin = req.headers.authorization
-  const ip = requestIp.getClientIp(req)
+  try {
+    console.info('Init post...')
+    let upgraded = res.locals.upgraded
+    const origin = req.headers.authorization
+    const ip = requestIp.getClientIp(req)
 
-  const documents = req.body.length ? req.body : [req.body]
+    const documents = req.body.length ? req.body : [req.body]
 
-  // Check upgrade to premium function
-  if (documents.length > 1) {
-    if (!upgraded)
-      await getUpgradedStatus({ origin }).then(
-        (status) => {
-          upgraded = status
-        },
-        () => {
-          return responseError(res, 402)
-        }
-      )
-    if (upgraded !== 'COMPLETED') return responseError(res, 403)
-  }
-
-  let payload = []
-
-  for (const { url, id } of documents) {
-    if (!url) {
-      payload.push(responseError(null, 400))
-      continue
-    }
-
-    console.info('processing:', url)
-
-    await generateId({ length: config.idLength, current: id }).then(
-      async ({ validId }) => {
-        await createUrlBridge({ id: validId, url, origin }).then(
-          () => {
-            console.info('completed:', url)
-            payload.push({
-              id: validId,
-              target: url,
-              shortcut: `https://simplifi.ga/${validId}`,
-            })
-            updateUsageCounter({ ip, origin })
+    // Check upgrade to premium function
+    if (documents.length > 1) {
+      if (!upgraded)
+        await getUpgradedStatus({ origin }).then(
+          (status) => {
+            upgraded = status
           },
           () => {
-            payload.push(responseError(null, 501))
+            return responseError(res, 402)
           }
         )
-      },
-      (error) => {
-        switch (error.message) {
-          case 'blocked':
-            payload.push(responseError(null, 406))
-            break
-          case 'invalid':
-            payload.push(responseError(null, 409))
-            break
-          default:
-            payload.push(responseError(null, 501))
-        }
-      }
-    )
-  }
+      if (upgraded !== 'COMPLETED') return responseError(res, 403)
+    }
 
-  console.info('End process')
-  payload = payload.length === 1 ? payload[0] : payload
-  Response(req, res, payload)
+    let payload = []
+
+    for (const { url, id } of documents) {
+      if (!url) {
+        payload.push(responseError(null, 400))
+        continue
+      }
+
+      console.info('processing:', url)
+
+      await generateId({ length: config.idLength, current: id }).then(
+        async ({ validId }) => {
+          await createUrlBridge({ id: validId, url, origin }).then(
+            () => {
+              console.info('completed:', url)
+              payload.push({
+                id: validId,
+                target: url,
+                shortcut: `https://simplifi.ga/${validId}`,
+              })
+              updateUsageCounter({ ip, origin })
+            },
+            () => {
+              payload.push(responseError(null, 501))
+            }
+          )
+        },
+        (error) => {
+          switch (error.message) {
+            case 'blocked':
+              payload.push(responseError(null, 406))
+              break
+            case 'invalid':
+              payload.push(responseError(null, 409))
+              break
+            default:
+              payload.push(responseError(null, 501))
+          }
+        }
+      )
+    }
+
+    console.info('End process')
+    payload = payload.length === 1 ? payload[0] : payload
+    Response(req, res, payload)
+  } catch {
+    responseError(res, 501)
+  }
 })
 
 router.delete('/:id', async (req, res) => {
