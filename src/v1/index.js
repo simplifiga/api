@@ -29,7 +29,12 @@ const config = {
 
 const router = express.Router()
 
-router.get(async (req, res) => {
+router.use((req, _res, next) => {
+  console.info('V1: New Request:', req.headers.authorization)
+  next()
+})
+
+router.get('/', async (req, res) => {
   // Get all data by user
   const origin = req.headers.authorization
   await retrieveAllUrlData({ origin })
@@ -135,7 +140,7 @@ router.get('/filter/:props', async (req, res) => {
     .catch(() => responseError(500))
 })
 
-router.post(async (req, res) => {
+router.post('/', async (req, res) => {
   let upgraded = res.locals.upgraded
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)

@@ -56,6 +56,5 @@ export class Connection {
 }
 
 process.on('SIGINT', () => {
-  Connection.close()
   process.exit(0)
 })

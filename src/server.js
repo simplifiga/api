@@ -39,7 +39,6 @@ router.use((req, res, next) => {
   validateToken({ token: authorization }).then(
     (data) => {
       if (data === null) return responseError(res, 401)
-      console.log('NEW REQUEST: ' + authorization)
       next()
     },
     () => responseError(res, 500)
@@ -47,7 +46,7 @@ router.use((req, res, next) => {
 })
 
 // metrics < 100 or premium user
-router.post(async (req, res, next) => {
+router.post('*', async (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
@@ -80,7 +79,8 @@ Object.keys(routes).forEach((version) => {
 
 router.use('/', routes.v1.router)
 
-router.use((_req, res) => {
+router.use((req, res) => {
+  console.info('404: Headers:', req.headers)
   return responseError(res, 404)
 })
 
