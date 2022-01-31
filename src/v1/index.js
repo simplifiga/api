@@ -50,14 +50,16 @@ router.get('/qrcode/:id', async (req, res) => {
   const id = req.params.id
   let upgraded = res.locals.upgraded
 
-  await getUpgradedStatus({ origin }).then(
-    (status) => {
-      upgraded = status
-    },
-    () => {
-      return responseError(res, 402)
-    }
-  )
+  if (!upgraded)
+    await getUpgradedStatus({ origin }).then(
+      (status) => {
+        upgraded = status
+      },
+      () => {
+        return responseError(res, 402)
+      }
+    )
+
   if (upgraded !== 'COMPLETED') return responseError(res, 403)
 
   await retrieveUrlData({ id, origin })

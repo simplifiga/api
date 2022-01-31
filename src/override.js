@@ -1,12 +1,20 @@
 import express from 'express'
 import expressContentTypeOverride from 'express-content-type-override'
 import routes from './routes.js'
+import cors from 'cors'
 
 const router = express()
+
+const corsOptions = {
+  origin: '*',
+  methods: routes.v1.methods,
+  optionsSuccessStatus: 200,
+}
 
 router.use('*', expressContentTypeOverride({ contentType: 'application/json' }))
 router.use(express.json({ type: 'application/json' }))
 router.use(express.urlencoded({ extended: true }))
+router.use(cors(corsOptions))
 
 router.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -23,7 +31,9 @@ router.use((req, res, next) => {
       'Access-Control-Allow-Methods',
       `${routes.v1.methods},OPTIONS`
     )
-    return res.status(200).json({})
+    return res.status(200).json({
+      methods: routes.v1.methods,
+    })
   }
   next()
 })
