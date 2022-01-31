@@ -79,8 +79,7 @@ Object.keys(routes).forEach((version) => {
 
 router.use('/', routes.v1.router)
 
-router.use((req, res) => {
-  console.info('404: Headers:', req.headers)
+router.use((_req, res) => {
   return responseError(res, 404)
 })
 

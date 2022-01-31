@@ -157,46 +157,51 @@ router.post('/', async (req, res) => {
     if (upgraded !== 'COMPLETED') return responseError(res, 403)
   }
 
-  const payload = await Promise.all(
-    documents.map(({ url, id }) => {
-      return new Promise((resolve) => {
-        if (!url) return resolve(responseError(null, 400))
+  let payload = []
 
-        generateId({ length: config.idLength, current: id }).then(
-          async ({ validId }) => {
-            createUrlBridge({ id: validId, url, origin }).then(
-              async () => {
-                await updateUsageCounter({ ip, origin })
-                resolve({
-                  id: validId,
-                  target: url,
-                  shortcut: `https://simplifi.ga/${validId}`,
-                })
-              },
-              () => {
-                resolve(responseError(null, 501))
-              }
-            )
+  for (const { url, id } of documents) {
+    if (!url) {
+      payload.push(responseError(null, 400))
+      continue
+    }
+
+    console.info('processing:', url)
+
+    await generateId({ length: config.idLength, current: id }).then(
+      async ({ validId }) => {
+        await createUrlBridge({ id: validId, url, origin }).then(
+          () => {
+            console.info('completed:', url)
+            payload.push({
+              id: validId,
+              target: url,
+              shortcut: `https://simplifi.ga/${validId}`,
+            })
+            updateUsageCounter({ ip, origin })
           },
-          (error) => {
-            switch (error.message) {
-              case 'blocked':
-                resolve(responseError(null, 406))
-                break
-              case 'invalid':
-                resolve(responseError(null, 409))
-            }
+          () => {
+            payload.push(responseError(null, 501))
           }
         )
-      })
-    })
-  )
+      },
+      (error) => {
+        switch (error.message) {
+          case 'blocked':
+            payload.push(responseError(null, 406))
+            break
+          case 'invalid':
+            payload.push(responseError(null, 409))
+            break
+          default:
+            payload.push(responseError(null, 501))
+        }
+      }
+    )
+  }
 
-  console.info('End post...')
-
-  if (payload && payload.length !== 0)
-    return Response(req, res, payload.length === 1 ? payload[0] : payload)
-  return responseError(res, 501)
+  console.info('End process')
+  payload = payload.length === 1 ? payload[0] : payload
+  Response(req, res, payload)
 })
 
 router.delete('/:id', async (req, res) => {
