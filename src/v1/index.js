@@ -27,7 +27,7 @@ const config = {
 }
 // CONFIG //
 
-const router = express()
+const router = express.Router()
 
 router.get('/', async (req, res) => {
   // Get all data by user
