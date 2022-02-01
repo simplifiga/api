@@ -39,6 +39,7 @@ router.use((req, res, next) => {
   validateToken({ token: authorization }).then(
     (data) => {
       if (data === null) return responseError(res, 401)
+      console.log('NEW REQUEST: ' + authorization)
       next()
     },
     () => responseError(res, 500)
@@ -46,31 +47,24 @@ router.use((req, res, next) => {
 })
 
 // metrics < 100 or premium user
-router.post('*', async (req, res, next) => {
+router.post('/', (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
-  await getUsageMetrics({ origin, ip })?.then(
-    (data) => {
-      data.requests >= 100
-        ? getUpgradedStatus({ origin }).then(
-            (status) => {
-              if (status !== 'COMPLETED') return responseError(res, 403)
-              res.locals.upgraded = status
-              next()
-            },
-            () => {
-              responseError(res, 402)
-            }
-          )
-        : next()
-    },
-    () => {
-      next()
-    }
-  )
-
-  next()
+  getUsageMetrics({ origin, ip })?.then((data) => {
+    data.requests >= 100
+      ? getUpgradedStatus({ origin }).then(
+          (status) => {
+            if (status !== 'COMPLETED') return responseError(res, 403)
+            res.locals.upgraded = status
+            next()
+          },
+          () => {
+            responseError(res, 402)
+          }
+        )
+      : next()
+  }) ?? next()
 })
 
 Object.keys(routes).forEach((version) => {

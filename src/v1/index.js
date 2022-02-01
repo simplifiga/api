@@ -27,7 +27,7 @@ const config = {
 }
 // CONFIG //
 
-const router = express()
+const router = express.Router()
 
 router.get('/', async (req, res) => {
   // Get all data by user
@@ -50,16 +50,14 @@ router.get('/qrcode/:id', async (req, res) => {
   const id = req.params.id
   let upgraded = res.locals.upgraded
 
-  if (!upgraded)
-    await getUpgradedStatus({ origin }).then(
-      (status) => {
-        upgraded = status
-      },
-      () => {
-        return responseError(res, 402)
-      }
-    )
-
+  await getUpgradedStatus({ origin }).then(
+    (status) => {
+      upgraded = status
+    },
+    () => {
+      return responseError(res, 402)
+    }
+  )
   if (upgraded !== 'COMPLETED') return responseError(res, 403)
 
   await retrieveUrlData({ id, origin })
@@ -136,76 +134,39 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  try {
-    console.info('Init post...')
-    let upgraded = res.locals.upgraded
-    const origin = req.headers.authorization
-    const ip = requestIp.getClientIp(req)
-
-    const documents = req.body.length ? req.body : [req.body]
-
-    // Check upgrade to premium function
-    if (documents.length > 1) {
-      if (!upgraded)
-        await getUpgradedStatus({ origin }).then(
-          (status) => {
-            upgraded = status
-          },
-          () => {
-            return responseError(res, 402)
-          }
-        )
-      if (upgraded !== 'COMPLETED') return responseError(res, 403)
-    }
-
-    let payload = []
-
-    for (const { url, id } of documents) {
-      if (!url) {
-        payload.push(responseError(null, 400))
-        continue
-      }
-
-      console.info('processing:', url)
-
-      await generateId({ length: config.idLength, current: id }).then(
-        async ({ validId }) => {
-          await createUrlBridge({ id: validId, url, origin }).then(
-            () => {
-              console.info('completed:', url)
-              payload.push({
-                id: validId,
-                target: url,
-                shortcut: `https://simplifi.ga/${validId}`,
-              })
-              updateUsageCounter({ ip, origin })
-            },
-            () => {
-              payload.push(responseError(null, 501))
-            }
-          )
-        },
-        (error) => {
-          switch (error.message) {
-            case 'blocked':
-              payload.push(responseError(null, 406))
-              break
-            case 'invalid':
-              payload.push(responseError(null, 409))
-              break
-            default:
-              payload.push(responseError(null, 501))
-          }
-        }
-      )
-    }
-
-    console.info('End process')
-    payload = payload.length === 1 ? payload[0] : payload
-    Response(req, res, payload)
-  } catch {
-    responseError(res, 501)
+  if (req.body.length) {
+    return responseError(res, 503, 'Bulk link shortening is under maintenance.')
   }
+
+  const origin = req.headers.authorization
+  const ip = requestIp.getClientIp(req)
+  const { url, id } = req.body
+
+  if (!url) return responseError(res, 400)
+
+  generateId({ length: config.idLength, current: id }).then(
+    ({ validId }) => {
+      createUrlBridge({ id: validId, url, origin })
+        .then(() => {
+          Response(req, res, {
+            id: validId,
+            target: url,
+            shortcut: `https://simplifi.ga/${validId}`,
+          })
+          updateUsageCounter({ ip, origin })
+        })
+        .catch(() => responseError(res, 500))
+    },
+    (error) => {
+      switch (error.message) {
+        case 'blocked':
+          responseError(res, 406)
+          break
+        case 'invalid':
+          responseError(res, 409)
+      }
+    }
+  )
 })
 
 router.delete('/:id', async (req, res) => {
