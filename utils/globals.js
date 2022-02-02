@@ -1,5 +1,45 @@
-import { searchElementById, searchElementsById } from '../database/functions.js'
+import {
+  getUpgradedStatus,
+  searchElementById,
+  searchElementsById,
+} from '../database/functions.js'
 import { readFile } from 'fs/promises'
+import responseError from './errors.js'
+
+export async function validateUserUpgrade({ res, origin }) {
+  if (res.locals.upgraded) return res.locals.upgraded
+  const upgraded = await getUpgradedStatus({ origin })
+  return upgraded
+}
+
+export function mountDocuments({ use, invalid, valid }) {
+  return use.map((_e, index) => {
+    if (invalid[index].error) return invalid[index]
+    if (valid[index].error) return valid[index]
+    return {
+      params: {
+        id: valid[index],
+        url: invalid[index].url,
+      },
+      index,
+    }
+  })
+}
+
+export function manyShortenerSwitch(document) {
+  switch (document.error) {
+    case 'MISSING-PARAMETERS':
+      return responseError(null, 400)
+    case 'REPEATED-DOCUMENT':
+      return responseError(null, 422)
+    case 'INVALID':
+      return responseError(null, 409)
+    case 'BLOCKED':
+      return responseError(null, 406)
+    default:
+      return responseError(null, 501)
+  }
+}
 
 export function mapInvalidDocuments(array) {
   return array.map((reference, index) => {

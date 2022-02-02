@@ -21,8 +21,11 @@ import Response from '../../utils/response.js'
 import {
   generateId,
   generateManyIds,
+  manyShortenerSwitch,
   mapInvalidDocuments,
   mapRepeatedDocs,
+  mountDocuments,
+  validateUserUpgrade,
 } from '../../utils/globals.js'
 
 import requestIp from 'request-ip'
@@ -144,75 +147,58 @@ router.post('/', async (req, res) => {
   const ip = requestIp.getClientIp(req)
 
   if (req.body.length) {
-    const filtered = mapRepeatedDocs(mapInvalidDocuments(req.body))
+    const upgraded = await validateUserUpgrade({ res, origin })
 
-    const validateIds = await generateManyIds({
+    switch (upgraded) {
+      case 'COMPLETED':
+        break
+      case 'PENDING':
+        return responseError(res, 403)
+      default:
+        return responseError(res, 402)
+    }
+
+    const mapInvalid = mapRepeatedDocs(mapInvalidDocuments(req.body))
+
+    const validIds = await generateManyIds({
       length: config.idLength,
-      ids: filtered.map((current) => (current.error ? current : current.id)),
+      ids: mapInvalid.map((current) => (current.error ? current : current.id)),
     })
 
-    const mapped = req.body.map((_e, index) => {
-      if (filtered[index].error) return filtered[index]
-      if (validateIds[index].error) return validateIds[index]
-      return {
-        params: {
-          id: validateIds[index],
-          url: filtered[index].url,
-        },
-        index,
-      }
+    const mounted = mountDocuments({
+      use: req.body,
+      valid: validIds,
+      invalid: mapInvalid,
     })
 
-    const workDocs = mapped.filter(({ params }) => params)
+    const allowed = mounted.filter(({ params }) => params)
 
-    if (workDocs.length === 0)
+    if (allowed.length === 0)
       return Response(
         req,
         res,
-        mapped.map((i) => {
-          switch (document.error) {
-            case 'MISSING-PARAMETERS':
-              return responseError(null, 400)
-            case 'REPEATED-DOCUMENT':
-              return responseError(null, 422)
-            case 'INVALID':
-              return responseError(null, 409)
-            case 'BLOCKED':
-              return responseError(null, 406)
-            default:
-              return responseError(null, 501)
-          }
+        mounted.map((document) => {
+          return manyShortenerSwitch(document)
         })
       )
 
-    return createMayUrlBridge({ list: workDocs, origin }).then(
+    return createMayUrlBridge({ list: allowed, origin }).then(
       (data) => {
         if (!data.acknowledged) return responseError(res, 501)
         return Response(
           req,
           res,
-          mapped.map((document, index) => {
-            const thisWorkDoc = workDocs.filter((doc) => doc.index === index)[0]
-            if (thisWorkDoc) {
+          mounted.map((document, index) => {
+            const ImAllowed = allowed.filter((doc) => doc.index === index)[0]
+            if (ImAllowed) {
               return {
-                id: thisWorkDoc.params.id,
-                target: thisWorkDoc.params.url,
-                shortcut: `https://simplifi.ga/${thisWorkDoc.params.id}`,
+                id: ImAllowed.params.id,
+                target: ImAllowed.params.url,
+                shortcut: `https://simplifi.ga/${ImAllowed.params.id}`,
               }
             }
 
-            switch (document.error) {
-              case 'MISSING-PARAMETERS':
-                return responseError(null, 400)
-              case 'REPEATED-DOCUMENT':
-                return responseError(null, 422)
-              case 'INVALID':
-                return responseError(null, 409)
-              case 'BLOCKED':
-                return responseError(null, 406)
-              default:
-                return responseError(null, 501)
-            }
+            return manyShortenerSwitch(document)
           })
         )
       },
