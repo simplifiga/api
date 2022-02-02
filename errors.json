@@ -8,5 +8,6 @@
   "409": "Conflict: Another document has the same identifier",
   "429": "Too Many Requests: Limit reached for free accounts",
   "402": "Payment Required: This option is not available on the free plan",
-  "403": "Forbidden: Account upgrade is not/not yet valid"
+  "403": "Forbidden: Account upgrade is not/not yet valid",
+  "422": "Unprocessable: Documents with repeated identification"
 }

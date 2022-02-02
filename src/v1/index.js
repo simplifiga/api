@@ -12,12 +12,18 @@ import {
   updateUrlBridge,
   updateUsageCounter,
   getUpgradedStatus,
+  createMayUrlBridge,
 } from '../../database/functions.js'
 
 import { ArrayToObj, convertUrlToQRcode } from '../../utils/converter.js'
 
 import Response from '../../utils/response.js'
-import { generateId } from '../../utils/globals.js'
+import {
+  generateId,
+  generateManyIds,
+  mapInvalidDocuments,
+  mapRepeatedDocs,
+} from '../../utils/globals.js'
 
 import requestIp from 'request-ip'
 
@@ -134,12 +140,88 @@ router.get('/filter/:props', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  if (req.body.length) {
-    return responseError(res, 503, 'Bulk link shortening is under maintenance.')
-  }
-
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
+
+  if (req.body.length) {
+    const filtered = mapRepeatedDocs(mapInvalidDocuments(req.body))
+
+    const validateIds = await generateManyIds({
+      length: config.idLength,
+      ids: filtered.map((current) => (current.error ? current : current.id)),
+    })
+
+    const mapped = req.body.map((_e, index) => {
+      if (filtered[index].error) return filtered[index]
+      if (validateIds[index].error) return validateIds[index]
+      return {
+        params: {
+          id: validateIds[index],
+          url: filtered[index].url,
+        },
+        index,
+      }
+    })
+
+    const workDocs = mapped.filter(({ params }) => params)
+
+    if (workDocs.length === 0)
+      return Response(
+        req,
+        res,
+        mapped.map((i) => {
+          switch (document.error) {
+            case 'MISSING-PARAMETERS':
+              return responseError(null, 400)
+            case 'REPEATED-DOCUMENT':
+              return responseError(null, 422)
+            case 'INVALID':
+              return responseError(null, 409)
+            case 'BLOCKED':
+              return responseError(null, 406)
+            default:
+              return responseError(null, 501)
+          }
+        })
+      )
+
+    return createMayUrlBridge({ list: workDocs, origin }).then(
+      (data) => {
+        if (!data.acknowledged) return responseError(res, 501)
+        return Response(
+          req,
+          res,
+          mapped.map((document, index) => {
+            const thisWorkDoc = workDocs.filter((doc) => doc.index === index)[0]
+            if (thisWorkDoc) {
+              return {
+                id: thisWorkDoc.params.id,
+                target: thisWorkDoc.params.url,
+                shortcut: `https://simplifi.ga/${thisWorkDoc.params.id}`,
+              }
+            }
+
+            switch (document.error) {
+              case 'MISSING-PARAMETERS':
+                return responseError(null, 400)
+              case 'REPEATED-DOCUMENT':
+                return responseError(null, 422)
+              case 'INVALID':
+                return responseError(null, 409)
+              case 'BLOCKED':
+                return responseError(null, 406)
+              default:
+                return responseError(null, 501)
+            }
+          })
+        )
+      },
+      () => {
+        responseError(res, 501)
+      }
+    )
+  }
+
   const { url, id } = req.body
 
   if (!url) return responseError(res, 400)

@@ -19,6 +19,25 @@ export function createUrlBridge({ id, url, origin }) {
   })
 }
 
+export function createMayUrlBridge({ list, origin }) {
+  return new Promise((resolve, reject) => {
+    Connection.links
+      .insertMany(
+        list.map(({ params }) => {
+          return {
+            id: params.id,
+            target: params.url,
+            origin: origin,
+            references: [],
+            locations: [],
+            clicks: 0,
+          }
+        })
+      )
+      .then(resolve, reject)
+  })
+}
+
 export function retrieveUrlData({ id, origin }) {
   return new Promise((resolve, reject) => {
     Connection.links.findOne({ id, origin }).then(resolve, reject)
@@ -28,6 +47,17 @@ export function retrieveUrlData({ id, origin }) {
 export function searchElementById({ id }) {
   return new Promise((resolve, reject) => {
     Connection.links.findOne({ id }).then(resolve, reject)
+  })
+}
+
+export function searchElementsById({ ids }) {
+  return new Promise((resolve) => {
+    Connection.links
+      .find({ id: { $in: ids } })
+      .toArray()
+      .then((data) => {
+        return resolve(data.map(({ id }) => id))
+      })
   })
 }
 
