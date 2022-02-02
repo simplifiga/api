@@ -51,20 +51,25 @@ router.post('/', (req, res, next) => {
   const origin = req.headers.authorization
   const ip = requestIp.getClientIp(req)
 
-  getUsageMetrics({ origin, ip })?.then((data) => {
-    data.requests >= 100
-      ? getUpgradedStatus({ origin }).then(
-          (status) => {
-            if (status !== 'COMPLETED') return responseError(res, 403)
-            res.locals.upgraded = status
-            next()
-          },
-          () => {
-            responseError(res, 402)
-          }
-        )
-      : next()
-  }) ?? next()
+  getUsageMetrics({ origin, ip })?.then(
+    (data) => {
+      data.requests >= 100
+        ? getUpgradedStatus({ origin }).then(
+            (status) => {
+              if (status !== 'COMPLETED') return responseError(res, 403)
+              res.locals.upgraded = status
+              next()
+            },
+            () => {
+              responseError(res, 402)
+            }
+          )
+        : next()
+    },
+    () => {
+      next()
+    }
+  ) ?? next()
 })
 
 Object.keys(routes).forEach((version) => {
