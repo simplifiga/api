@@ -20,5 +20,6 @@ export default function responseError(res, statusCode, message) {
   return res.status(statusCode).json({
     statusCode,
     message: resMessage,
+    documentation: new URL('https://simplifi.ga/developer#errors'),
   })
 }
