@@ -1,13 +1,13 @@
 {
-  "401": "Unauthorized: Invalid/non-existent authentication",
-  "501": "Server Error: Internal error during processing",
-  "404": "Not Found: Unknown address",
   "400": "Bad Request: Incorrect parameters",
-  "510": "Gone: The requested document is not available",
-  "406": "Not Acceptable: Some parameter is locked for use to avoid errors",
-  "409": "Conflict: Another document has the same identifier",
-  "429": "Too Many Requests: Limit reached for free accounts",
+  "401": "Unauthorized: Invalid/non-existent authentication",
   "402": "Payment Required: This option is not available on the free plan",
   "403": "Forbidden: Account upgrade is not/not yet valid",
-  "422": "Unprocessable: Documents with repeated identification"
+  "404": "Not Found: Unknown address",
+  "406": "Not Acceptable: Some parameter is locked for use to avoid errors",
+  "409": "Conflict: Another document has the same identifier",
+  "422": "Unprocessable: Documents with repeated identification",
+  "429": "Too Many Requests: Limit reached for free accounts",
+  "501": "Server Error: Internal error during processing",
+  "510": "Gone: The requested document is not available"
 }
