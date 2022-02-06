@@ -11,7 +11,6 @@ export async function convertUrlToQRcode({ url }) {
     type: 'png',
     width: 400,
     errorCorrectionLevel: 'H',
-    version: 6,
   })
 
   return qrStream

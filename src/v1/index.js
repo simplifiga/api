@@ -11,7 +11,6 @@ import {
   retrieveUrlData,
   updateUrlBridge,
   updateUsageCounter,
-  getUpgradedStatus,
   createMayUrlBridge,
 } from '../../database/functions.js'
 
@@ -57,22 +56,22 @@ router.get('/', async (req, res) => {
 router.get('/qrcode/:id', async (req, res) => {
   const origin = req.headers.authorization
   const id = req.params.id
-  let upgraded = res.locals.upgraded
 
-  await getUpgradedStatus({ origin }).then(
-    (status) => {
-      upgraded = status
-    },
-    () => {
+  const upgraded = await validateUserUpgrade({ res, origin })
+
+  switch (upgraded) {
+    case 'COMPLETED':
+      break
+    case 'PENDING':
+      return responseError(res, 403)
+    default:
       return responseError(res, 402)
-    }
-  )
-  if (upgraded !== 'COMPLETED') return responseError(res, 403)
+  }
 
   await retrieveUrlData({ id, origin })
     .then((data) => {
       if (!data) return responseError(res, 510)
-      convertUrlToQRcode({ url: data.target }).then(
+      convertUrlToQRcode({ url: 'https://simplifi.ga/' + data.id }).then(
         (qrStream) => {
           if (!qrStream) return responseError(res, 500)
           res.setHeader('content-type', 'image/png')
